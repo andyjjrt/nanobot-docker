@@ -1,0 +1,70 @@
+name: build-docker
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions: 
+      packages: write
+      contents: write
+    steps:
+      -
+        name: Checkout
+        uses: actions/checkout@v3
+      -
+        name: Docker meta
+        id: meta
+        uses: docker/metadata-action@v4
+        with:
+          images: ghcr.io/${{ github.repository }}
+          tags: |
+            type=semver,pattern={{version}}
+      -
+        name: Login to ghcr.io
+        if: github.event_name != 'pull_request'
+        uses: docker/login-action@v2
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      -
+        name: Build and push
+        uses: docker/build-push-action@v4
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+      
+      - name: Generate changelog
+        id: changelog
+        uses: jaywcjlove/changelog-generator@v2.2.2
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          filter-author: (dependabot|renovate\\[bot\\]|dependabot\\[bot\\]|Renovate Bot)
+          filter: '[R|r]elease[d]\s+[v|V]\d(\.\d+){0,2}'
+      
+      - name: Get the changelog
+        run: echo "${{ steps.changelog.outputs.changelog }}"
+      
+      - name: Create Release
+        uses: ncipollo/release-action@v1
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          name: v${{ steps.meta.outputs.version }}
+          tag: v${{ steps.meta.outputs.version }}
+          prerelease: ${{ contains(github.ref, 'beta') }}
+          body: |
+            # v${{ steps.meta.outputs.version }}
+
+            ```sh
+            docker pull ghcr.io/${{ github.repository }}:${{ steps.meta.outputs.version }}
+            ```
+
+            ## Changelog
+
+            Please refer to https://github.com/HKUDS/nanobot/releases/tag/${{ steps.meta.outputs.version }}
