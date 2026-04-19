@@ -6,11 +6,26 @@ on:
       - 'v*'
 
 jobs:
-  release:
+  build:
     runs-on: ubuntu-latest
     permissions: 
       packages: write
       contents: write
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - variant: core
+            image_tag: latest
+            sync_args: --no-dev
+
+          - variant: discord
+            image_tag: discord
+            sync_args: --no-dev --extra discord
+
+          - variant: api
+            image_tag : api
+            sync_args: --no-dev --extra api
     steps:
       -
         name: Checkout
@@ -20,7 +35,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v4
         with:
-          images: ghcr.io/${{ github.repository }}
+          images: ghcr.io/andyjjrt/nanobot
           tags: |
             type=pep440,pattern={{version}}
       -
@@ -37,23 +52,44 @@ jobs:
         with:
           context: .
           push: true
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
-      
+          build-args: |
+            UV_SYNC_ARGS=${{ matrix.sync_args }}
+          tags: |
+            ghcr.io/andyjjrt/nanobot:${{ matrix.image_tag }}
+            ghcr.io/andyjjrt/nanobot:${{ github.ref_name }}-${{ matrix.variant }}
+  release:
+    runs-on: ubuntu-latest
+    needs: build
+    permissions:
+      contents: write
+
+    steps:
       - name: Create Release
         uses: ncipollo/release-action@v1
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          name: v${{ steps.meta.outputs.version }}
-          tag: v${{ steps.meta.outputs.version }}
-          prerelease: ${{ contains(github.ref, 'beta') }}
+          name: ${{ github.ref_name }}
+          tag: ${{ github.ref_name }}
+          prerelease: ${{ contains(github.ref_name, 'beta') }}
           body: |
-            # v${{ steps.meta.outputs.version }}
+            # ${{ github.ref_name }}
+
+            ## Docker images
 
             ```sh
-            docker pull ghcr.io/${{ github.repository }}:${{ steps.meta.outputs.version }}
+            docker pull ghcr.io/${{ github.repository }}:latest
+            docker pull ghcr.io/${{ github.repository }}:discord
+            docker pull ghcr.io/${{ github.repository }}:api
             ```
 
-            ## Changelog
+            ## Versioned tags
 
-            Please refer to https://github.com/HKUDS/nanobot/releases/tag/${{ steps.meta.outputs.version }}
+            ```sh
+            docker pull ghcr.io/${{ github.repository }}:${{ github.ref_name }}-core
+            docker pull ghcr.io/${{ github.repository }}:${{ github.ref_name }}-discord
+            docker pull ghcr.io/${{ github.repository }}:${{ github.ref_name }}-api
+            ```
+
+            ## Release Note
+
+            [HKUDS/nanobot](https://github.com/HKUDS/nanobot/releases/tag/${{ github.ref_name }})

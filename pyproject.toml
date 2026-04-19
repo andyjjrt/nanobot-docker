@@ -5,5 +5,9 @@ description = "docker repo for nanobot"
 readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
-    "nanobot-ai[api,discord]==0.1.5.post1",
+    "nanobot-ai==0.1.5.post1",
 ]
+
+[project.optional-dependencies]
+api = ["nanobot-ai[api]==0.1.5.post1"]
+discord = ["nanobot-ai[discord]==0.1.5.post1"]
