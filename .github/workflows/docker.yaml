@@ -22,7 +22,7 @@ jobs:
         with:
           images: ghcr.io/${{ github.repository }}
           tags: |
-            type=semver,pattern={{version}}
+            type=pep440,pattern={{version}}
       -
         name: Login to ghcr.io
         if: github.event_name != 'pull_request'
