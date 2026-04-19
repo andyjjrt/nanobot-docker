@@ -1159,11 +1159,24 @@ name = "nanobot-docker"
 version = "0.1.5.post1"
 source = { virtual = "." }
 dependencies = [
-    { name = "nanobot-ai", extra = ["api", "discord"] },
+    { name = "nanobot-ai" },
+]
+
+[package.optional-dependencies]
+api = [
+    { name = "nanobot-ai", extra = ["api"] },
+]
+discord = [
+    { name = "nanobot-ai", extra = ["discord"] },
 ]
 
 [package.metadata]
-requires-dist = [{ name = "nanobot-ai", extras = ["api", "discord"], specifier = "==0.1.5.post1" }]
+requires-dist = [
+    { name = "nanobot-ai", specifier = "==0.1.5.post1" },
+    { name = "nanobot-ai", extras = ["api"], marker = "extra == 'api'", specifier = "==0.1.5.post1" },
+    { name = "nanobot-ai", extras = ["discord"], marker = "extra == 'discord'", specifier = "==0.1.5.post1" },
+]
+provides-extras = ["api", "discord"]
 
 [[package]]
 name = "oauth-cli-kit"

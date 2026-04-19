@@ -9,5 +9,9 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-api = ["nanobot-ai[api]==0.1.5.post1"]
-discord = ["nanobot-ai[discord]==0.1.5.post1"]
+api = [
+    "nanobot-ai[api]==0.1.5.post1"
+]
+discord = [
+    "nanobot-ai[discord]==0.1.5.post1"
+]
